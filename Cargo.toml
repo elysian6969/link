@@ -1,0 +1,25 @@
+[package]
+edition = "2021"
+name = "link"
+version = "0.0.0"
+
+[dependencies.findshlibs]
+default-features = false
+version = "0.10"
+
+[dependencies.libc]
+default-features = false
+version = "0.2"
+
+[dependencies.libloading]
+default-features = false
+version = "0.7"
+
+[dependencies.once_cell]
+default-features = false
+features = ["parking_lot", "std"]
+version = "1.13"
+
+[dependencies.parking_lot]
+default-features = false
+version = "0.12"
