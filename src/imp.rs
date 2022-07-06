@@ -37,11 +37,18 @@ pub unsafe fn load(name: &OsStr) -> Result<NonNull<u8>, OpenError> {
 }
 
 #[inline]
+pub unsafe fn close(handle: NonNull<u8>) {
+    let library = into_libloading(handle);
+    let _library = ManuallyDrop::into_inner(library);
+}
+
+#[inline]
 pub unsafe fn symbol<T>(handle: NonNull<u8>, name: &OsStr) -> Option<T> {
     let result = ffi::with_osstr_to_cstr(name, |cstr| {
         let library = into_libloading(handle);
+        let name = cstr.to_bytes_with_nul();
 
-        match library.get::<Option<T>>(cstr.to_bytes_with_nul()) {
+        match library.get::<Option<T>>(name) {
             Ok(symbol) => {
                 // check if the pointer is null
                 let symbol = symbol.lift_option()?;

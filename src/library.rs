@@ -95,3 +95,16 @@ impl Library {
         imp::symbol(self.handle, name)
     }
 }
+
+impl Drop for Library {
+    fn drop(&mut self) {
+        unsafe {
+            imp::close(self.handle);
+        }
+
+        // ensure library cache is updated
+        let cache = Cache::load();
+
+        cache.update();
+    }
+}
