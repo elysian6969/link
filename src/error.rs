@@ -1,12 +1,13 @@
-use std::ffi::{CStr, CString};
-use std::{error, fmt};
+// TODO: actual errors, lol !
+
+use std::fmt;
 
 pub enum OpenError {
     UndefinedSymbol, //(Box<CStr>),
 }
 
 impl OpenError {
-    pub(crate) fn from_libloading(error: libloading::Error) -> OpenError {
+    pub(crate) fn from_libloading(_error: libloading::Error) -> OpenError {
         OpenError::UndefinedSymbol //(Default::default())
     }
 }
