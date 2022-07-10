@@ -5,7 +5,7 @@ use std::mem;
 use std::mem::ManuallyDrop;
 use std::ptr::NonNull;
 
-const IS_LOADED: libc::c_int = libc::RTLD_NOLOAD;
+const IS_LOADED: libc::c_int = libc::RTLD_NOLOAD | unix::RTLD_LAZY;
 const LOAD: libc::c_int = unix::RTLD_LAZY | unix::RTLD_LOCAL;
 
 #[inline]
