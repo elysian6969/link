@@ -1,12 +1,11 @@
 use crate::{ffi, OpenError};
 use libloading::os::unix;
 use std::ffi::OsStr;
-use std::mem;
 use std::mem::ManuallyDrop;
 use std::ptr::NonNull;
 
 const IS_LOADED: libc::c_int = libc::RTLD_NOLOAD | unix::RTLD_LAZY;
-const LOAD: libc::c_int = unix::RTLD_LAZY | unix::RTLD_LOCAL;
+const LOAD: libc::c_int = unix::RTLD_LAZY | unix::RTLD_GLOBAL;
 
 #[inline]
 fn into_handle(handle: unix::Library) -> NonNull<u8> {
@@ -43,24 +42,15 @@ pub unsafe fn close(handle: NonNull<u8>) {
 }
 
 #[inline]
-pub unsafe fn symbol<T>(handle: NonNull<u8>, name: &OsStr) -> Option<T> {
+pub unsafe fn symbol(handle: NonNull<u8>, name: &OsStr) -> Option<*const u8> {
     let result = ffi::with_osstr_to_cstr(name, |cstr| {
         let library = into_libloading(handle);
         let name = cstr.to_bytes_with_nul();
+        let symbol = library.get::<*const u8>(name).ok()?;
+        let address = symbol.into_raw().as_const().cast::<u8>();
+        let not_null = !address.is_null();
 
-        match library.get::<Option<T>>(name) {
-            Ok(symbol) => {
-                // check if the pointer is null
-                let symbol = symbol.lift_option()?;
-
-                // convert to T
-                let data = symbol.into_raw();
-                let data = mem::transmute_copy(&data);
-
-                Some(data)
-            }
-            Err(_error) => None,
-        }
+        not_null.then(|| address)
     });
 
     result?

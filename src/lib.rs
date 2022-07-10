@@ -1,5 +1,5 @@
 #![deny(warnings)]
-#![feature(slice_from_ptr_range)]
+#![feature(ptr_const_cast)]
 #![feature(strict_provenance)]
 
 pub use error::OpenError;

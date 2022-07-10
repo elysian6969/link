@@ -42,6 +42,8 @@ impl Map {
     {
         const EMPTY: &[u8] = &[];
 
-        self.inner.read().get(name.as_ref()).unwrap_or(&EMPTY)
+        let name = name.as_ref();
+
+        self.inner.read().get(name).unwrap_or(&EMPTY)
     }
 }

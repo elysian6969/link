@@ -1,4 +1,4 @@
-use crate::{imp, Cache, OpenError};
+use crate::{cache, imp, Cache, OpenError};
 use std::ffi::OsStr;
 use std::ptr::NonNull;
 
@@ -22,14 +22,23 @@ impl Library {
         S: AsRef<OsStr>,
     {
         let name = name.as_ref();
-        let library = imp::load(name)?;
+        let result = crate::ffi::with_osstr_to_cstr(name, |cstr| {
+            let name = &*(cstr as *const std::ffi::CStr as *const [u8]);
+            let name = &name[..(name.len() - 1)];
+            let name = &*(name as *const [u8] as *const OsStr);
+            let library = imp::load(name)?;
 
-        // ensure library cache is updated
-        let cache = Cache::load();
+            // ensure library cache is updated
+            let cache = Cache::load();
 
-        cache.update();
+            cache.update();
 
-        Ok(Self::from_raw(name.into(), library))
+            let name = cache::name_of(name).into();
+
+            Ok(Self::from_raw(name, library))
+        });
+
+        result.unwrap()
     }
 
     /// Determine whether an executable object file is loaded.
@@ -71,7 +80,7 @@ impl Library {
         cache.get(self.name())
     }
 
-    /// Returns the symbol identified by `name`.
+    /// Returns a pointer to the symbol identified by `name`.
     ///
     /// # Examples
     ///
@@ -86,13 +95,38 @@ impl Library {
     ///
     /// Caller is responsible for ensuring `T` is the correct type.
     #[inline]
-    pub unsafe fn symbol<S, T>(&self, name: S) -> Option<T>
+    pub unsafe fn symbol_ptr<S, T>(&self, name: S) -> Option<*const T>
     where
         S: AsRef<OsStr>,
     {
         let name = name.as_ref();
+        let ptr = imp::symbol(self.handle, name)?;
 
-        imp::symbol(self.handle, name)
+        Some(ptr.cast())
+    }
+
+    /// Returns the value located at the symbol identified by `name`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// type MallocFn = unsafe extern "C" fn(len: usize) -> *mut u8;
+    ///
+    /// let malloc: MallocFn = library.symbol("malloc")?;
+    /// let alloc = malloc(4);
+    /// ```
+    ///
+    /// # Safety
+    ///
+    /// Caller is responsible for ensuring `T` is the correct type.
+    #[inline]
+    pub unsafe fn symbol_read<S, T>(&self, name: S) -> Option<T>
+    where
+        S: AsRef<OsStr>,
+    {
+        let address: *const T = self.symbol_ptr(name)?;
+
+        Some(address.read_unaligned())
     }
 }
 

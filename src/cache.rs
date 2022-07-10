@@ -46,7 +46,7 @@ where
 
 /// Returns the file name of a library path as a `Box<OsStr>`.
 #[inline]
-fn name_of(path: &OsStr) -> Box<OsStr> {
+pub fn name_of(path: &OsStr) -> Box<OsStr> {
     let path = Path::new(path);
 
     // SAFETY: Library paths *always* have a file name.
