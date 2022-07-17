@@ -11,5 +11,6 @@ mod cache;
 mod error;
 mod library;
 
-pub(crate) mod ffi;
 pub(crate) mod imp;
+
+pub mod ffi;
